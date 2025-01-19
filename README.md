@@ -87,8 +87,8 @@ Setup Instructions
 
 Clone the Repository
 
-git clone https://github.com/your-username/whatsapp-scheduler.git
-cd whatsapp-scheduler
+git clone https://github.com/juanfsouza/RHSystem.git
+cd RHSystem
 
 Install Dependencies
 
@@ -112,25 +112,7 @@ Requires WhatsApp Web to remain open during the entire process.
 
 Depends on the user scanning the QR code for authentication.
 
-Contributing
-
-Contributions are welcome! Please follow these steps:
-
-Fork the repository.
-
-Create a new branch (git checkout -b feature/your-feature-name).
-
-Commit your changes (git commit -m 'Add some feature').
-
-Push to the branch (git push origin feature/your-feature-name).
-
-Open a pull request.
-
-License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
-
-Contact
+Contributing for me
 
 For questions or support, please open an issue or contact me at your-email@example.com.
 
