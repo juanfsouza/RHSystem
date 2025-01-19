@@ -7,13 +7,14 @@ import re
 from grpc import services
 import pdfplumber
 from selenium.webdriver.common.by import By
-from datetime import datetime
+from datetime import datetime, timedelta
 from tkinter import messagebox
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 import undetected_chromedriver as uc
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 
 # Configuração inicial do CustomTkinter
@@ -112,7 +113,7 @@ class RHApp(ctk.CTk):
         super().__init__()
 
         self.title("Sistema de RH")
-        self.geometry("800x600")
+        self.geometry("870x700")
 
         # Frame principal
         self.main_frame = ctk.CTkFrame(self)
@@ -296,14 +297,13 @@ class RHApp(ctk.CTk):
         ctk.CTkMessagebox(title="Sucesso", message="Candidato atualizado com sucesso.")
 
     def extract_from_pdfs(self):
-        folder_path = "caminho/para/pasta/dos/pdfs"
+        folder_path = "./pdfs"
         extracted_data = process_pdfs(folder_path)
         
         for data in extracted_data:
             add_candidato(data["nome"], data["numero"], data["email"])
 
         self.load_table()  # Recarrega a tabela após a inserção
-
 
     def schedule_appointments(self):
         """Exibe os campos de agendamento para cada candidato selecionado."""
@@ -343,11 +343,7 @@ class RHApp(ctk.CTk):
         self.send_whatsapp_messages(selected_ids, time_slot, schedule_datetime)
     
     def send_whatsapp_messages(self, selected_ids, time_slot, schedule_datetime):
-        """Envia mensagens via WhatsApp usando Selenium."""
         chrome_opt = uc.ChromeOptions()
-                        
-        options = uc.ChromeOptions()
-
         # Inicializar o navegador Chrome
         driver = uc.Chrome(options=chrome_opt)
 
@@ -355,30 +351,38 @@ class RHApp(ctk.CTk):
         driver.get("https://web.whatsapp.com/")
 
         print("Por favor, escaneie o QR Code se necessário.")
-        time.sleep(15)  # Espera para escanear o QR Code
-
+        time.sleep(35)  # Espera para escanear o QR Code
+        
         for candidato_id in selected_ids:
+            # Recuperar informações do candidato
             candidato = next(c for c in fetch_candidatos() if c[0] == candidato_id)
             nome = candidato[1]
             numero = candidato[2]
 
-            # Criar a mensagem com data e tempo de agendamento
-            message = f"Olá {nome}, seu agendamento está confirmado para {schedule_datetime.strftime('%d/%m/%Y às %H:%M')}. O tempo de atendimento é de {time_slot} minutos."
+            # Criar a mensagem com o horário ajustado
+            message = f"Olá {nome}, seu agendamento está confirmado para {schedule_datetime.strftime('%d/%m/%Y às %H:%M')}."
 
             # URL para enviar a mensagem no WhatsApp
             driver.get(f"https://web.whatsapp.com/send?phone=+55{numero}&text={message}")
 
-            time.sleep(5)  # Espera o carregamento da página
+            time.sleep(10)  # Espera o carregamento da página
 
-            # Encontrar o botão de envio e clicar
-            send_button = driver.find_element(By.XPATH, '//button[@data-testid="compose-btn-send"]')
-            send_button.click()
+            try:
+                # Aguarde até que o botão de envio esteja visível e clicável
+                send_button = WebDriverWait(driver, 30).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, "span[data-icon='send']"))
+                )
+                send_button.click()  # Enviar a mensagem
+                print(f"Mensagem enviada para {nome} no número {numero}: {message}")
+            except Exception as e:
+                print(f"Erro ao enviar mensagem para {nome} no número {numero}: {e}")
 
-            time.sleep(2)  # Espera para garantir que a mensagem seja enviada
+            # Incrementar o horário para o próximo candidato
+            schedule_datetime += timedelta(minutes=time_slot)
 
-        driver.quit()  # Fecha o navegador
+        driver.quit()
 
-        ctk.CTkMessagebox(title="Sucesso", message="Mensagens enviadas com sucesso!")
+        messagebox.showinfo("Sucesso", "Mensagens enviadas com sucesso!")
 
 if __name__ == "__main__":
     setup_database()
